@@ -4,7 +4,7 @@ pub mod timer;
 pub mod tray;
 
 use std::sync::Arc;
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
 use timer::{SharedTimer, TickResult, TimerEngine};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

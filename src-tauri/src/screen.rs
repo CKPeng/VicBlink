@@ -39,7 +39,6 @@ impl ScreenManager {
         )
         .title("VicBlink - 远眺休息")
         .decorations(false)
-        .transparent(true)
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(false)
