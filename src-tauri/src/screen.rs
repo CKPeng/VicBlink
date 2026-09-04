@@ -1,4 +1,4 @@
-﻿use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 pub struct ScreenManager;
 

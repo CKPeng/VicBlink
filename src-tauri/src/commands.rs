@@ -1,4 +1,4 @@
-﻿use tauri::{AppHandle, State};
+use tauri::{AppHandle, State};
 use crate::timer::{SharedTimer, TimerSnapshot};
 use crate::screen::ScreenManager;
 

@@ -1,4 +1,4 @@
-﻿pub mod commands;
+pub mod commands;
 pub mod screen;
 pub mod timer;
 pub mod tray;

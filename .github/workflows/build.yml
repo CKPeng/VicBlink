@@ -1,4 +1,4 @@
-﻿name: Release & Build VicBlink
+name: Release & Build VicBlink
 
 on:
   push:
