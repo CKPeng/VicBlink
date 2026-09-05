@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { sound, AmbientSoundType } from '../utils/sound';
+import { sound, AmbientSoundType, StartChimeType, EndChimeType } from '../utils/sound';
 
 export type TimerMode = 'WORKING' | 'BREAK' | 'PAUSED' | 'IDLE';
 export type WorkMethod = 'MODE_20_20_20' | 'MODE_POMODORO';
 
 export interface DailyStatItem {
-  date: string; // YYYY-MM-DD
+  date: string;
   count: number;
   pomodoroCount: number;
   totalBreakSeconds: number;
@@ -13,15 +13,18 @@ export interface DailyStatItem {
 
 export interface UserPreferences {
   workMethod: WorkMethod;
-  workMinutes20: number; // 默认 20
-  breakSeconds20: number; // 默认 20
-  pomodoroWorkMinutes: number; // 默认 50
-  pomodoroBreakMinutes: number; // 默认 10
-  nestedMicroBreak: boolean; // 番茄钟是否内嵌 20 秒微远眺
-  isStrictMode: boolean; // 严厉模式
-  isDndMode: boolean; // 会议免打扰
-  ambientSound: AmbientSoundType; // 休息时白噪音
-  idleThresholdMinutes: number; // 闲置挂起阈值，默认 3
+  workMinutes20: number;
+  breakSeconds20: number;
+  pomodoroWorkMinutes: number;
+  pomodoroBreakMinutes: number;
+  nestedMicroBreak: boolean;
+  isStrictMode: boolean;
+  isDndMode: boolean;
+  focusAmbient: AmbientSoundType; // 专注时白噪音伴奏
+  breakAmbient: AmbientSoundType; // 远眺时白噪音伴奏
+  startChime: StartChimeType;     // 开始远眺提示音
+  endChime: EndChimeType;         // 结束远眺提示音
+  idleThresholdMinutes: number;
 }
 
 const DEFAULT_PREFS: UserPreferences = {
@@ -33,7 +36,10 @@ const DEFAULT_PREFS: UserPreferences = {
   nestedMicroBreak: true,
   isStrictMode: false,
   isDndMode: false,
-  ambientSound: 'ocean',
+  focusAmbient: 'none',
+  breakAmbient: 'ocean',
+  startChime: 'bowl',
+  endChime: 'marimba',
   idleThresholdMinutes: 3,
 };
 
@@ -76,13 +82,12 @@ export function useTimer() {
   const [timeRemaining, setTimeRemaining] = useState<number>(prefs.workMinutes20 * 60);
   const [totalDuration, setTotalDuration] = useState<number>(prefs.workMinutes20 * 60);
   const [isTestMode, setIsTestMode] = useState(false);
-  const [isMicroBreak, setIsMicroBreak] = useState(false); // 是否是番茄钟内嵌的 20 秒微远眺
+  const [isMicroBreak, setIsMicroBreak] = useState(false);
 
   const lastActiveRef = useRef<number>(Date.now());
   const prevModeRef = useRef<TimerMode>('WORKING');
   const elapsedWorkSecondsRef = useRef<number>(0);
 
-  // 保存偏好
   const updatePrefs = useCallback((newPrefs: Partial<UserPreferences>) => {
     setPrefs((prev) => {
       const merged = { ...prev, ...newPrefs };
@@ -93,11 +98,10 @@ export function useTimer() {
     });
   }, []);
 
-  // 闲置监听 (Idle Detection - 核心护城河)
+  // 闲置监听 (Idle Detection)
   useEffect(() => {
     const onUserActivity = () => {
       lastActiveRef.current = Date.now();
-      // 如果当前因为长时间离开被置为 IDLE，重返键盘/鼠标时自动恢复
       setMode((currentMode) => {
         if (currentMode === 'IDLE') {
           return 'WORKING';
@@ -117,23 +121,29 @@ export function useTimer() {
     };
   }, []);
 
-  // 音效与白噪音生命周期控制
+  // 专注期与远眺期双轨声音控制
   useEffect(() => {
-    if (prevModeRef.current !== mode) {
-      if (mode === 'BREAK') {
-        sound.playBreakStart();
-        if (prefs.ambientSound !== 'none') {
-          sound.playAmbient(prefs.ambientSound, 1.5);
-        }
-      } else if (prevModeRef.current === 'BREAK' && mode === 'WORKING') {
-        sound.stopAmbient(1.0);
-        sound.playBreakEnd();
-      } else {
-        sound.stopAmbient(0.5);
+    if (mode === 'WORKING') {
+      if (prevModeRef.current === 'BREAK') {
+        sound.playEndChime(prefs.endChime);
       }
-      prevModeRef.current = mode;
+      if (prefs.focusAmbient !== 'none') {
+        sound.playAmbient(prefs.focusAmbient, 1.5);
+      } else {
+        sound.stopAmbient(1.0);
+      }
+    } else if (mode === 'BREAK') {
+      sound.playStartChime(prefs.startChime);
+      if (prefs.breakAmbient !== 'none') {
+        sound.playAmbient(prefs.breakAmbient, 1.5);
+      } else {
+        sound.stopAmbient(0.8);
+      }
+    } else if (mode === 'PAUSED' || mode === 'IDLE') {
+      sound.stopAmbient(0.8);
     }
-  }, [mode, prefs.ambientSound]);
+    prevModeRef.current = mode;
+  }, [mode, prefs.focusAmbient, prefs.breakAmbient, prefs.startChime, prefs.endChime]);
 
   // 获取当前配置下的工作与休息时长
   const getCycleDurations = useCallback(() => {
@@ -157,7 +167,6 @@ export function useTimer() {
   // 主计时与状态流转循环
   useEffect(() => {
     const timer = setInterval(() => {
-      // 闲置检测判断：若超过闲置阈值（如3分钟），自动暂停挂起进入 IDLE
       const idleLimitMs = (isTestMode ? 15 : prefs.idleThresholdMinutes * 60) * 1000;
       const isIdleNow = Date.now() - lastActiveRef.current > idleLimitMs;
 
@@ -177,7 +186,6 @@ export function useTimer() {
           elapsedWorkSecondsRef.current += 1;
           const { breakSec, isPomo } = getCycleDurations();
 
-          // 番茄钟双轨嵌套 20 秒微远眺：在专注第 20 分钟和 40 分钟时轻量打断
           if (isPomo && prefs.nestedMicroBreak && !isTestMode) {
             const elapsedMins = Math.floor(elapsedWorkSecondsRef.current / 60);
             if ((elapsedMins === 20 || elapsedMins === 40) && elapsedWorkSecondsRef.current % 60 === 0) {
@@ -192,7 +200,6 @@ export function useTimer() {
             return prevTime - 1;
           }
 
-          // 专注倒计时归零 -> 进入正常休息
           elapsedWorkSecondsRef.current = 0;
           setIsMicroBreak(false);
           setTotalDuration(breakSec);
@@ -205,7 +212,6 @@ export function useTimer() {
             return prevTime - 1;
           }
 
-          // 休息结束 -> 统计打卡并回到 WORKING
           const isPomoBreak = prefs.workMethod === 'MODE_POMODORO' && !isMicroBreak;
           recordCompletedBreak(isPomoBreak, totalDuration);
 
@@ -221,9 +227,8 @@ export function useTimer() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [mode, prefs, isTestMode, isMicroBreak, getCycleDurations]);
+  }, [mode, prefs, isTestMode, isMicroBreak, getCycleDurations, totalDuration]);
 
-  // 控制动作
   const pauseFor = useCallback((seconds: number) => {
     setMode('PAUSED');
     setTimeRemaining(seconds);
@@ -238,13 +243,20 @@ export function useTimer() {
     elapsedWorkSecondsRef.current = 0;
   }, [getCycleDurations]);
 
-  const skipBreak = useCallback(() => {
-    // 严厉模式下若开启，外部应拦截；若调用则执行
+  const skipBreak = useCallback(async () => {
     const { work } = getCycleDurations();
     setMode('WORKING');
     setTimeRemaining(work);
     setTotalDuration(work);
     setIsMicroBreak(false);
+
+    // 如果在 Tauri 环境中，通知后端隐藏所有 overlay 窗口
+    if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('skip_break');
+      } catch (_) {}
+    }
   }, [getCycleDurations]);
 
   const reset = useCallback(() => {
@@ -266,12 +278,20 @@ export function useTimer() {
     setIsMicroBreak(false);
   }, [prefs]);
 
-  const triggerBreakNow = useCallback(() => {
+  const triggerBreakNow = useCallback(async () => {
     const breakSec = prefs.workMethod === 'MODE_POMODORO' ? prefs.pomodoroBreakMinutes * 60 : prefs.breakSeconds20;
     setIsMicroBreak(false);
     setMode('BREAK');
     setTimeRemaining(breakSec);
     setTotalDuration(breakSec);
+
+    // 在 Tauri 环境中通知后端触发多屏幕全屏置顶遮罩
+    if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+      try {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('trigger_break_now');
+      } catch (_) {}
+    }
   }, [prefs]);
 
   const progress = totalDuration > 0 ? (totalDuration - timeRemaining) / totalDuration : 0;
