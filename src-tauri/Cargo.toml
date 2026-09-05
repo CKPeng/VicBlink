@@ -1,6 +1,6 @@
 [package]
 name = "vic-blink"
-version = "1.0.0"
+version = "1.0.3"
 description = "20-20-20 Rule Eye Care Desktop Assistant"
 authors = ["Vic"]
 edition = "2021"

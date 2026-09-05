@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/refs/heads/v2/crates/tauri-cli/schema.json",
   "productName": "VicBlink",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "identifier": "com.vicblink.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -14,13 +14,13 @@
     "trayIcon": {
       "id": "main-tray",
       "iconPath": "icons/icon.png",
-      "tooltip": "VicBlink - 20-20-20 护眼助手",
+      "tooltip": "VicBlink - 20-20-20 鎶ょ溂鍔╂墜",
       "title": "20m"
     },
     "windows": [
       {
         "label": "main",
-        "title": "VicBlink 控制中心",
+        "title": "VicBlink 鎺у埗涓績",
         "width": 340,
         "height": 480,
         "resizable": false,

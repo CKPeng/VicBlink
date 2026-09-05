@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import { UserPreferences } from '../hooks/useTimer';
-import { AmbientSoundType, sound } from '../utils/sound';
-import { Settings, Shield, BellOff, Music, Clock, Volume2, VolumeX } from 'lucide-react';
+import { AmbientSoundType, StartChimeType, EndChimeType, sound } from '../utils/sound';
+import {
+  Settings,
+  Shield,
+  BellOff,
+  Music,
+  Clock,
+  Volume2,
+  VolumeX,
+  PlayCircle,
+  Headphones,
+  Bell,
+} from 'lucide-react';
 
 interface SettingsModalProps {
   prefs: UserPreferences;
@@ -16,12 +27,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [playingPreview, setPlayingPreview] = useState<AmbientSoundType>('none');
 
-  const togglePreview = (type: AmbientSoundType) => {
+  const toggleAmbientPreview = (type: AmbientSoundType) => {
     if (playingPreview === type) {
       sound.stopAmbient(0.3);
       setPlayingPreview('none');
     } else {
-      sound.playAmbient(type, 0.5);
+      sound.playAmbient(type, 0.4);
       setPlayingPreview(type);
     }
   };
@@ -34,13 +45,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onClose();
   };
 
+  const ambientOptions: { id: AmbientSoundType; label: string; desc: string }[] = [
+    { id: 'none', label: '静音', desc: '关闭伴奏' },
+    { id: 'ocean', label: '海浪微风', desc: '律动潮涌' },
+    { id: 'rain', label: '山间晨雨', desc: '舒缓雨滴' },
+    { id: 'wind', label: '林间风声', desc: '空灵风吟' },
+    { id: 'fire', label: '壁炉柴火', desc: '温暖爆裂' },
+  ];
+
+  const startChimeOptions: { id: StartChimeType; label: string; desc: string }[] = [
+    { id: 'bowl', label: '西藏颂钵', desc: '悠扬和弦' },
+    { id: 'bell', label: '禅意磬音', desc: '空灵微颤' },
+    { id: 'gong', label: '和缓铜锣', desc: '深沉回响' },
+    { id: 'wood', label: '清心木鱼', desc: '节奏定神' },
+    { id: 'none', label: '静音', desc: '无提示音' },
+  ];
+
+  const endChimeOptions: { id: EndChimeType; label: string; desc: string }[] = [
+    { id: 'marimba', label: '马林巴琴', desc: '清脆双音' },
+    { id: 'crystal', label: '水晶水滴', desc: '灵动通透' },
+    { id: 'harp', label: '流光竖琴', desc: '拂弦上扬' },
+    { id: 'ding', label: '清脆晨钟', desc: '精神振奋' },
+    { id: 'none', label: '静音', desc: '无提示音' },
+  ];
+
   return (
-    <div className="w-[340px] h-[480px] bg-slate-900/98 backdrop-blur-2xl text-slate-100 p-5 rounded-2xl border border-white/10 shadow-2xl flex flex-col justify-between select-none overflow-y-auto">
+    <div className="w-[340px] h-[480px] bg-slate-900/98 backdrop-blur-2xl text-slate-100 p-4 rounded-2xl border border-white/10 shadow-2xl flex flex-col justify-between select-none">
       {/* 标题栏 */}
-      <div className="flex items-center justify-between pb-3 border-b border-white/10">
+      <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <div className="flex items-center gap-2">
           <Settings className="w-4 h-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold text-white">护眼与工作偏好设置</h2>
+          <h2 className="text-sm font-semibold text-white">护眼与声音偏好设置</h2>
         </div>
         <button
           onClick={handleClose}
@@ -50,8 +85,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </button>
       </div>
 
-      <div className="space-y-4 py-3 flex-1 overflow-y-auto pr-1">
-        {/* 1. 工作法选择 */}
+      <div className="space-y-3.5 py-2 flex-1 overflow-y-auto pr-1">
+        {/* 1. 工作模式 */}
         <div className="space-y-1.5">
           <label className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-emerald-400" /> 计时模式
@@ -82,84 +117,57 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </button>
           </div>
 
-          {/* 番茄钟嵌套微远眺选项 */}
           {prefs.workMethod === 'MODE_POMODORO' && (
-            <label className="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/5 cursor-pointer mt-1">
+            <label className="flex items-center gap-2 p-1.5 rounded-xl bg-white/5 border border-white/5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={prefs.nestedMicroBreak}
                 onChange={(e) => onUpdatePrefs({ nestedMicroBreak: e.target.checked })}
                 className="rounded accent-emerald-500"
               />
-              <span className="text-[11px] text-slate-300">
-                双轨嵌套：50分钟内每20分钟轻量远眺 20 秒
+              <span className="text-[10px] text-slate-300">
+                双轨嵌套：50m内每20m微远眺20s
               </span>
             </label>
           )}
         </div>
 
-        {/* 2. 严厉模式控制 */}
-        <div className="space-y-1.5">
-          <label className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
-            <Shield className="w-3.5 h-3.5 text-amber-400" /> 遮罩严格程度
-          </label>
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10">
-            <div>
-              <div className="text-xs text-slate-200 font-medium">严厉防跳过模式</div>
-              <div className="text-[10px] text-slate-400">隐藏跳过按钮，禁止 Esc 退出，必须满 20 秒</div>
-            </div>
-            <input
-              type="checkbox"
-              checked={prefs.isStrictMode}
-              onChange={(e) => onUpdatePrefs({ isStrictMode: e.target.checked })}
-              className="rounded accent-emerald-500 w-4 h-4 cursor-pointer"
-            />
-          </div>
-        </div>
-
-        {/* 3. 场景化白噪音伴奏 */}
+        {/* 2. 专注期白噪音 */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
-              <Music className="w-3.5 h-3.5 text-cyan-400" /> 远眺白噪音伴奏
+              <Headphones className="w-3.5 h-3.5 text-teal-400" /> 专注工作白噪音伴奏
             </label>
-            <span className="text-[10px] text-slate-500">遮罩时自动淡入</span>
+            <span className="text-[10px] text-slate-500">工作时轻声循环</span>
           </div>
-
           <div className="grid grid-cols-2 gap-1.5">
-            {[
-              { id: 'none', label: '静音', desc: '仅提示音' },
-              { id: 'ocean', label: '海浪微风', desc: '潮涌律动' },
-              { id: 'rain', label: '山间晨雨', desc: '轻柔雨滴' },
-              { id: 'wind', label: '林间风声', desc: '空灵风吟' },
-              { id: 'fire', label: '壁炉柴火', desc: '温暖爆裂' },
-            ].map((item) => (
+            {ambientOptions.map((item) => (
               <div
                 key={item.id}
-                onClick={() => onUpdatePrefs({ ambientSound: item.id as AmbientSoundType })}
-                className={`p-2 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                  prefs.ambientSound === item.id
-                    ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                onClick={() => onUpdatePrefs({ focusAmbient: item.id })}
+                className={`p-1.5 rounded-lg border flex items-center justify-between cursor-pointer transition-all ${
+                  prefs.focusAmbient === item.id
+                    ? 'bg-teal-500/15 border-teal-500/40 text-teal-300'
                     : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
                 }`}
               >
                 <div>
-                  <div className="text-xs font-medium">{item.label}</div>
-                  <div className="text-[10px] opacity-70">{item.desc}</div>
+                  <div className="text-[11px] font-medium">{item.label}</div>
+                  <div className="text-[9px] opacity-70">{item.desc}</div>
                 </div>
                 {item.id !== 'none' && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      togglePreview(item.id as AmbientSoundType);
+                      toggleAmbientPreview(item.id);
                     }}
-                    className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white"
+                    className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white"
                     title="试听"
                   >
                     {playingPreview === item.id ? (
-                      <VolumeX className="w-3.5 h-3.5 text-amber-400" />
+                      <VolumeX className="w-3 h-3 text-amber-400" />
                     ) : (
-                      <Volume2 className="w-3.5 h-3.5" />
+                      <Volume2 className="w-3 h-3" />
                     )}
                   </button>
                 )}
@@ -168,14 +176,154 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
 
-        {/* 4. 会议免打扰与闲置检测 */}
+        {/* 3. 远眺期白噪音 */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+              <Music className="w-3.5 h-3.5 text-cyan-400" /> 远眺休息白噪音伴奏
+            </label>
+            <span className="text-[10px] text-slate-500">遮罩时自动淡入</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {ambientOptions.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => onUpdatePrefs({ breakAmbient: item.id })}
+                className={`p-1.5 rounded-lg border flex items-center justify-between cursor-pointer transition-all ${
+                  prefs.breakAmbient === item.id
+                    ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  <div className="text-[11px] font-medium">{item.label}</div>
+                  <div className="text-[9px] opacity-70">{item.desc}</div>
+                </div>
+                {item.id !== 'none' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleAmbientPreview(item.id);
+                    }}
+                    className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white"
+                    title="试听"
+                  >
+                    {playingPreview === item.id ? (
+                      <VolumeX className="w-3 h-3 text-amber-400" />
+                    ) : (
+                      <Volume2 className="w-3 h-3" />
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. 开始远眺提示音 */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+              <Bell className="w-3.5 h-3.5 text-emerald-400" /> 开始远眺提示音
+            </label>
+            <span className="text-[10px] text-slate-500">休息开始时播放</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {startChimeOptions.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => onUpdatePrefs({ startChime: item.id })}
+                className={`p-1.5 rounded-lg border flex items-center justify-between cursor-pointer transition-all ${
+                  prefs.startChime === item.id
+                    ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  <div className="text-[11px] font-medium">{item.label}</div>
+                  <div className="text-[9px] opacity-70">{item.desc}</div>
+                </div>
+                {item.id !== 'none' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sound.playStartChime(item.id);
+                    }}
+                    className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-emerald-300"
+                    title="试听"
+                  >
+                    <PlayCircle className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 5. 结束远眺提示音 */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+              <Bell className="w-3.5 h-3.5 text-amber-400" /> 结束远眺提示音
+            </label>
+            <span className="text-[10px] text-slate-500">休息结束时唤醒</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {endChimeOptions.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => onUpdatePrefs({ endChime: item.id })}
+                className={`p-1.5 rounded-lg border flex items-center justify-between cursor-pointer transition-all ${
+                  prefs.endChime === item.id
+                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  <div className="text-[11px] font-medium">{item.label}</div>
+                  <div className="text-[9px] opacity-70">{item.desc}</div>
+                </div>
+                {item.id !== 'none' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sound.playEndChime(item.id);
+                    }}
+                    className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-amber-300"
+                    title="试听"
+                  >
+                    <PlayCircle className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 6. 严厉模式与免打扰 */}
+        <div className="space-y-1.5 pt-1 border-t border-white/10">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-2">
+              <Shield className="w-3.5 h-3.5 text-amber-400" />
+              <div>
+                <div className="text-xs text-slate-200 font-medium">严厉防跳过模式</div>
+                <div className="text-[10px] text-slate-400">隐藏跳过按钮，禁止 Esc 退出</div>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={prefs.isStrictMode}
+              onChange={(e) => onUpdatePrefs({ isStrictMode: e.target.checked })}
+              className="rounded accent-emerald-500 w-4 h-4 cursor-pointer"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-2">
               <BellOff className="w-3.5 h-3.5 text-slate-400" />
               <div>
                 <div className="text-xs text-slate-200 font-medium">会议防打扰模式</div>
-                <div className="text-[10px] text-slate-400">强遮罩降级为静默通知</div>
+                <div className="text-[10px] text-slate-400">遮罩降级为静默通知</div>
               </div>
             </div>
             <input
