@@ -99,7 +99,7 @@ export const TrayPopover: React.FC<TrayPopoverProps> = ({
           <button
             onClick={onOpenSettings}
             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-            title="偏好设置 (番茄钟/白噪音/严厉模式)"
+            title="偏好设置 (时长/白噪音/提示音)"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -126,7 +126,7 @@ export const TrayPopover: React.FC<TrayPopoverProps> = ({
               : isPaused
               ? '已暂停'
               : isIdle
-              ? '系统闲置挂起中'
+              ? '闲置已暂停'
               : '专注工作中'}
           </span>
         </div>
@@ -139,7 +139,7 @@ export const TrayPopover: React.FC<TrayPopoverProps> = ({
           )}
           {prefs.isDndMode && (
             <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
-              <BellOff className="w-3 h-3" /> 会议免打扰
+              <BellOff className="w-3 h-3" /> 免打扰
             </span>
           )}
         </div>
@@ -162,12 +162,12 @@ export const TrayPopover: React.FC<TrayPopoverProps> = ({
               {isIdle ? (
                 <>
                   <Activity className="w-3 h-3 text-blue-400" />
-                  敲击键盘即可恢复
+                  敲击键盘恢复
                 </>
               ) : (
                 <>
                   <Clock className="w-3 h-3 text-slate-400" />
-                  {isBreak ? '剩余休息' : isPaused ? '暂停倒计' : '距下次远眺'}
+                  {isBreak ? '远眺倒计 (秒)' : isPaused ? '离线倒计' : '距下次远眺 (分:秒)'}
                 </>
               )}
             </span>
@@ -242,9 +242,9 @@ export const TrayPopover: React.FC<TrayPopoverProps> = ({
             <button
               onClick={onPreviewOverlay}
               className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 text-[11px]"
-              title="预览全屏毛玻璃遮罩"
+              title="预览 20 秒全屏毛玻璃遮罩"
             >
-              预览遮罩
+              预览遮罩 (20s)
             </button>
           )}
         </div>
